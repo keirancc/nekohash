@@ -1,5 +1,5 @@
 use rand::{Rng, SeedableRng, rngs::StdRng};
-use crate::{NekoHash, NekoResult};
+use crate::{NekoHash};
 
 /// KawaiiHash implementation with configurable output size
 pub struct KawaiiHash {

@@ -148,7 +148,7 @@ pub fn stretch_key(data: &[u8], iterations: usize, output_size: usize) -> NekoRe
     }
 
     let mut result = data.to_vec();
-    let mut hasher = KawaiiHash::with_size(output_size);
+    let hasher = KawaiiHash::with_size(output_size);
     
     for _ in 0..iterations {
         result = hasher.hash(&result);
