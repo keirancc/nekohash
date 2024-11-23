@@ -63,7 +63,6 @@ pub trait NekoHash {
     fn hash_encrypted(&self, data: &[u8], key: Option<&[u8]>) -> NekoResult<Vec<u8>> {
         let hash = self.hash(data);
         utils::encrypt_data(&hash, key)
-            .map_err(|e| NekoError::CryptoError(e))
     }
     
     /// Get the output size of the hash in bytes
@@ -84,13 +83,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-
-    #[test]
-    fn test_kawaii_hash_encryption() {
+    fn test_hash_encryption() {
         let hasher = KawaiiHash::new();
         let data = b"Hello, World!";
         let hash = hasher.hash(data);
@@ -111,4 +104,15 @@ mod tests {
 
 pub fn add(left: u64, right: u64) -> u64 {
     left + right
+}
+
+#[cfg(test)]
+mod add_tests {
+    use super::*;
+
+    #[test]
+    fn test_add() {
+        let result = add(2, 2);
+        assert_eq!(result, 4);
+    }
 }

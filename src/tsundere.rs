@@ -1,9 +1,10 @@
 use crate::NekoHash;
+use rand::{Rng, thread_rng};
 
-/// TsundereHash is a tsundere-themed hashing algorithm that initially seems
-/// hostile but actually produces reliable hashes
+/// TsundereHash implementation with fixed 32-byte output
 pub struct TsundereHash {
     rounds: usize,
+    state: [u64; 4],
 }
 
 impl Default for TsundereHash {
@@ -13,49 +14,96 @@ impl Default for TsundereHash {
 }
 
 impl TsundereHash {
+    /// Creates a new TsundereHash with default settings
     pub fn new() -> Self {
-        Self { rounds: 3 }
+        Self {
+            rounds: 8,
+            state: [0; 4],
+        }
     }
 
+    /// Creates a new TsundereHash with specified number of rounds
     pub fn with_rounds(rounds: usize) -> Self {
-        Self { rounds }
+        Self {
+            rounds,
+            state: [0; 4],
+        }
     }
 }
 
 impl NekoHash for TsundereHash {
     fn hash(&self, data: &[u8]) -> Vec<u8> {
+        let mut state = self.state;
         let mut result = Vec::with_capacity(32);
-        let mut state = [0u8; 32];
 
-        for (i, &byte) in data.iter().enumerate() {
-            state[i % 32] ^= byte;
-            state[(i + 7) % 32] = state[(i + 7) % 32].wrapping_add(byte);
-            
-            if i % 2 == 0 {
-                state[i % 32] = state[i % 32].rotate_left(3);
-            } else {
-                state[i % 32] = state[i % 32].rotate_right(2);
+        // Initial state mixing
+        for chunk in data.chunks(32) {
+            for (i, &byte) in chunk.iter().enumerate() {
+                let state_idx = (i / 8) % 4;
+                state[state_idx] ^= (byte as u64) << ((i % 8) * 8);
+            }
+
+            // Multiple rounds of transformation
+            for _ in 0..self.rounds {
+                // Tsundere transformations
+                state[0] = state[0].wrapping_add(state[1]);
+                state[1] = state[1].rotate_left(13);
+                state[2] = state[2].wrapping_sub(state[3]);
+                state[3] = state[3].rotate_right(7);
+
+                state[0] ^= state[2];
+                state[1] ^= state[3];
+                
+                // Add some randomness (because tsundere is unpredictable)
+                let random = thread_rng().gen::<u64>();
+                state[thread_rng().gen_range(0..4)] ^= random;
             }
         }
 
-        for _round in 0..self.rounds {
-            for i in 0..32 {
-                let prev = state[(i + 31) % 32];
-                let next = state[(i + 1) % 32];
-                state[i] ^= prev.wrapping_add(next);
-                state[i] = state[i].wrapping_mul(0x1B);
-            }
+        // Final mixing
+        for &s in &state {
+            result.extend_from_slice(&s.to_le_bytes());
         }
 
-        result.extend_from_slice(&state);
         result
     }
 
-    fn hash_size(&self) -> usize {
+    fn output_size(&self) -> usize {
         32
     }
 
-    fn algorithm_name(&self) -> &'static str {
-        "TsundereHash (๑•̀ㅁ•́๑)✧"
+    fn reset(&mut self) {
+        self.state = [0; 4];
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_tsundere_hash() {
+        let hasher = TsundereHash::new();
+        let data = b"Hello, Tsundere World!";
+        let hash = hasher.hash(data);
+        assert_eq!(hash.len(), 32);
+    }
+
+    #[test]
+    fn test_tsundere_hash_custom_rounds() {
+        let hasher = TsundereHash::with_rounds(16);
+        let data = b"Hello, Tsundere World!";
+        let hash = hasher.hash(data);
+        assert_eq!(hash.len(), 32);
+    }
+
+    #[test]
+    fn test_tsundere_hash_reset() {
+        let mut hasher = TsundereHash::new();
+        let data = b"Hello, Tsundere World!";
+        let hash1 = hasher.hash(data);
+        hasher.reset();
+        let hash2 = hasher.hash(data);
+        assert_eq!(hash1, hash2);
     }
 }
