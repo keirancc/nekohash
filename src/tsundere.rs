@@ -1,10 +1,11 @@
+use rand::{Rng, SeedableRng, rngs::StdRng};
 use crate::NekoHash;
-use rand::{Rng, thread_rng};
 
 /// TsundereHash implementation with fixed 32-byte output
 pub struct TsundereHash {
     rounds: usize,
-    state: [u64; 4],
+    state: Vec<u8>,
+    rng: StdRng,
 }
 
 impl Default for TsundereHash {
@@ -16,53 +17,55 @@ impl Default for TsundereHash {
 impl TsundereHash {
     /// Creates a new TsundereHash with default settings
     pub fn new() -> Self {
-        Self {
-            rounds: 8,
-            state: [0; 4],
-        }
+        Self::with_rounds(8)
     }
 
     /// Creates a new TsundereHash with specified number of rounds
     pub fn with_rounds(rounds: usize) -> Self {
+        let seed = 0x544e554e44455245; // 0xTSUNDERE
         Self {
             rounds,
-            state: [0; 4],
+            state: vec![0; 32],
+            rng: StdRng::seed_from_u64(seed),
         }
     }
 }
 
 impl NekoHash for TsundereHash {
     fn hash(&self, data: &[u8]) -> Vec<u8> {
-        let mut state = self.state;
-        let mut result = Vec::with_capacity(32);
+        let mut result = self.state.clone();
+        let mut rng = self.rng.clone();
 
-        // Initial state mixing
-        for chunk in data.chunks(32) {
-            for (i, &byte) in chunk.iter().enumerate() {
-                let state_idx = (i / 8) % 4;
-                state[state_idx] ^= (byte as u64) << ((i % 8) * 8);
-            }
-
-            // Multiple rounds of transformation
-            for _ in 0..self.rounds {
-                // Tsundere transformations
-                state[0] = state[0].wrapping_add(state[1]);
-                state[1] = state[1].rotate_left(13);
-                state[2] = state[2].wrapping_sub(state[3]);
-                state[3] = state[3].rotate_right(7);
-
-                state[0] ^= state[2];
-                state[1] ^= state[3];
-                
-                // Add some randomness (because tsundere is unpredictable)
-                let random = thread_rng().gen::<u64>();
-                state[thread_rng().gen_range(0..4)] ^= random;
-            }
+        // Initialize state with input
+        for (i, &byte) in data.iter().enumerate() {
+            result[i % 32] ^= byte;
         }
 
-        // Final mixing
-        for &s in &state {
-            result.extend_from_slice(&s.to_le_bytes());
+        // Apply tsundere transformations
+        for _ in 0..self.rounds {
+            // First pass - mix with random values
+            for i in 0..32 {
+                let random = rng.gen::<u8>();
+                result[i] = result[i].wrapping_add(random);
+                result[i] = result[i].rotate_left(3);
+            }
+
+            // Second pass - mix with previous values
+            for i in 1..32 {
+                result[i] ^= result[i - 1];
+            }
+
+            // Third pass - mix with future values
+            for i in (0..31).rev() {
+                result[i] ^= result[i + 1];
+            }
+
+            // Fourth pass - apply tsundere magic
+            for i in 0..32 {
+                let random = rng.gen::<u8>();
+                result[i] = result[i].wrapping_mul(0xB5);
+                result[i] ^= random;
+            }
         }
 
         result
@@ -73,7 +76,8 @@ impl NekoHash for TsundereHash {
     }
 
     fn reset(&mut self) {
-        self.state = [0; 4];
+        self.state = vec![0; 32];
+        self.rng = StdRng::seed_from_u64(0x544e554e44455245); // 0xTSUNDERE
     }
 }
 
@@ -84,26 +88,28 @@ mod tests {
     #[test]
     fn test_tsundere_hash() {
         let hasher = TsundereHash::new();
-        let data = b"Hello, Tsundere World!";
-        let hash = hasher.hash(data);
+        let input = b"Hello, World!";
+        let hash = hasher.hash(input);
         assert_eq!(hash.len(), 32);
     }
 
     #[test]
     fn test_tsundere_hash_custom_rounds() {
         let hasher = TsundereHash::with_rounds(16);
-        let data = b"Hello, Tsundere World!";
-        let hash = hasher.hash(data);
+        let input = b"Hello, World!";
+        let hash = hasher.hash(input);
         assert_eq!(hash.len(), 32);
     }
 
     #[test]
     fn test_tsundere_hash_reset() {
         let mut hasher = TsundereHash::new();
-        let data = b"Hello, Tsundere World!";
-        let hash1 = hasher.hash(data);
+        let input = b"Hello, World!";
+        
+        let hash1 = hasher.hash(input);
         hasher.reset();
-        let hash2 = hasher.hash(data);
+        let hash2 = hasher.hash(input);
+        
         assert_eq!(hash1, hash2);
     }
 }

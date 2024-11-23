@@ -2,7 +2,7 @@ use aes::Aes256;
 use ctr::{Ctr64BE, cipher::{KeyIvInit, StreamCipher}};
 use rand::{Rng, thread_rng};
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
-use crate::{NekoError, NekoResult};
+use crate::{NekoError, NekoResult, NekoHash, KawaiiHash};
 
 type Aes256Ctr64BE = Ctr64BE<Aes256>;
 
@@ -147,10 +147,8 @@ pub fn stretch_key(data: &[u8], iterations: usize, output_size: usize) -> NekoRe
         return Err(NekoError::InvalidInput("Output size must be greater than 0".into()));
     }
 
-    use crate::KawaiiHash;
-    
     let mut result = data.to_vec();
-    let hasher = KawaiiHash::with_size(output_size);
+    let mut hasher = KawaiiHash::with_size(output_size);
     
     for _ in 0..iterations {
         result = hasher.hash(&result);

@@ -1,10 +1,11 @@
-use rand::{Rng, thread_rng};
-use crate::NekoHash;
+use rand::{Rng, SeedableRng, rngs::StdRng};
+use crate::{NekoHash, NekoResult};
 
 /// KawaiiHash implementation with configurable output size
 pub struct KawaiiHash {
     size: usize,
     seed: u64,
+    rng: StdRng,
 }
 
 impl Default for KawaiiHash {
@@ -21,49 +22,74 @@ impl KawaiiHash {
 
     /// Creates a new KawaiiHash with specified output size
     pub fn with_size(size: usize) -> Self {
+        let seed = 0xDEADBEEF;
         Self {
             size,
-            seed: thread_rng().gen(),
+            seed,
+            rng: StdRng::seed_from_u64(seed),
+        }
+    }
+
+    /// Creates a new KawaiiHash with specified seed
+    pub fn with_seed(seed: u64) -> Self {
+        Self {
+            size: 32,
+            seed,
+            rng: StdRng::seed_from_u64(seed),
         }
     }
 
     /// Creates a new KawaiiHash with specified size and seed
-    pub fn with_seed_and_size(seed: u64, size: usize) -> Self {
-        Self { size, seed }
+    pub fn with_size_and_seed(size: usize, seed: u64) -> Self {
+        Self {
+            size,
+            seed,
+            rng: StdRng::seed_from_u64(seed),
+        }
     }
 }
 
 impl NekoHash for KawaiiHash {
     fn hash(&self, data: &[u8]) -> Vec<u8> {
-        let mut result = Vec::with_capacity(self.size);
-        let mut state = self.seed;
+        let mut result = vec![0u8; self.size];
+        let mut rng = StdRng::seed_from_u64(self.seed);
 
-        // Initial mixing
-        for chunk in data.chunks(8) {
-            let mut value = 0u64;
-            for (i, &byte) in chunk.iter().enumerate() {
-                value |= (byte as u64) << (i * 8);
+        // Initialize result with input data
+        for (i, &byte) in data.iter().enumerate() {
+            result[i % self.size] ^= byte;
+        }
+
+        // Apply kawaii transformations
+        for i in 0..self.size {
+            let random = rng.gen::<u8>();
+            result[i] = result[i].wrapping_add(random);
+            result[i] = result[i].rotate_left(3);
+            
+            if i > 0 {
+                result[i] ^= result[i - 1];
             }
-            state = state.wrapping_add(value);
-            state = state.rotate_left(13);
-            state ^= value;
         }
 
-        // Generate output
-        let mut rng = thread_rng();
-        while result.len() < self.size {
-            state = state.wrapping_mul(0x6c50_8bbb_9c09_c9df);
-            state ^= state >> 32;
-            state = state.wrapping_add(rng.gen::<u64>());
-            result.extend_from_slice(&state.to_le_bytes());
+        // Final mixing
+        for i in (0..self.size).rev() {
+            let random = rng.gen::<u8>();
+            result[i] = result[i].wrapping_mul(0xB5);
+            result[i] ^= random;
+            
+            if i < self.size - 1 {
+                result[i] ^= result[i + 1];
+            }
         }
 
-        result.truncate(self.size);
         result
     }
 
     fn output_size(&self) -> usize {
         self.size
+    }
+
+    fn reset(&mut self) {
+        self.rng = StdRng::seed_from_u64(self.seed);
     }
 }
 
@@ -74,25 +100,28 @@ mod tests {
     #[test]
     fn test_kawaii_hash() {
         let hasher = KawaiiHash::new();
-        let data = b"Hello, World!";
-        let hash = hasher.hash(data);
+        let input = b"Hello, World!";
+        let hash = hasher.hash(input);
         assert_eq!(hash.len(), 32);
     }
 
     #[test]
     fn test_kawaii_hash_custom_size() {
         let hasher = KawaiiHash::with_size(16);
-        let data = b"Hello, World!";
-        let hash = hasher.hash(data);
+        let input = b"Hello, World!";
+        let hash = hasher.hash(input);
         assert_eq!(hash.len(), 16);
     }
 
     #[test]
     fn test_kawaii_hash_deterministic() {
-        let hasher = KawaiiHash::with_seed_and_size(42, 32);
-        let data = b"Hello, World!";
-        let hash1 = hasher.hash(data);
-        let hash2 = hasher.hash(data);
+        let hasher1 = KawaiiHash::with_seed(12345);
+        let hasher2 = KawaiiHash::with_seed(12345);
+        let input = b"Hello, World!";
+        
+        let hash1 = hasher1.hash(input);
+        let hash2 = hasher2.hash(input);
+        
         assert_eq!(hash1, hash2);
     }
 }
