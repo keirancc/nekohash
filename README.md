@@ -1,6 +1,6 @@
 # 🐱 Nekohash
 
-An anime-themed hashing library for Rust that brings kawaii energy to your cryptographic needs! ✨
+A kawaii hashing library for Rust that keeps you cryptographically secure! ✨
 
 ## Features
 
