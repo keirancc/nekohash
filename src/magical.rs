@@ -1,6 +1,5 @@
 use crate::NekoHash;
 
-/// MagicalHash transforms your input into a magical hash using the power of friendship!
 pub struct MagicalHash {
     magic_constant: u64,
 }
@@ -35,7 +34,6 @@ impl NekoHash for MagicalHash {
         let mut result = Vec::with_capacity(16);
         let mut magic = self.magic_constant;
 
-        // Process input in magical 8-byte chunks
         for chunk in data.chunks(8) {
             let mut value = 0u64;
             for (i, &byte) in chunk.iter().enumerate() {
@@ -45,10 +43,8 @@ impl NekoHash for MagicalHash {
             magic = Self::cast_spell(value, magic);
         }
 
-        // Final transformation
         magic = Self::cast_spell(magic, data.len() as u64);
         
-        // Convert to bytes
         result.extend_from_slice(&magic.to_le_bytes());
         result.extend_from_slice(&(magic >> 32).to_le_bytes());
         

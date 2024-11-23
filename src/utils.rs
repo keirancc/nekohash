@@ -1,11 +1,9 @@
-/// Converts a byte slice to a hexadecimal string
 pub fn to_hex(bytes: &[u8]) -> String {
     bytes.iter()
         .map(|b| format!("{:02x}", b))
         .collect()
 }
 
-/// Converts a hexadecimal string to a byte vector
 pub fn from_hex(hex: &str) -> Result<Vec<u8>, String> {
     if hex.len() % 2 != 0 {
         return Err("Invalid hex string length".to_string());
@@ -20,7 +18,6 @@ pub fn from_hex(hex: &str) -> Result<Vec<u8>, String> {
         .collect()
 }
 
-/// Combines multiple hashes into one using a kawaii mixing function
 pub fn combine_hashes(hashes: &[Vec<u8>]) -> Vec<u8> {
     if hashes.is_empty() {
         return Vec::new();

@@ -1,7 +1,7 @@
 use crate::NekoHash;
 
 /// TsundereHash is a tsundere-themed hashing algorithm that initially seems
-/// hostile but actually produces reliable hashes... b-baka!
+/// hostile but actually produces reliable hashes
 pub struct TsundereHash {
     rounds: usize,
 }
@@ -21,12 +21,10 @@ impl NekoHash for TsundereHash {
         let mut result = Vec::with_capacity(32);
         let mut state = [0u8; 32];
 
-        // Initialize state with a tsundere attitude
         for (i, &byte) in data.iter().enumerate() {
             state[i % 32] ^= byte;
             state[(i + 7) % 32] = state[(i + 7) % 32].wrapping_add(byte);
             
-            // Hmph! Take that!
             if i % 2 == 0 {
                 state[i % 32] = state[i % 32].rotate_left(3);
             } else {
@@ -34,13 +32,12 @@ impl NekoHash for TsundereHash {
             }
         }
 
-        // Multiple rounds of processing... not that I care or anything!
-        for round in 0..self.rounds {
+        for _round in 0..self.rounds {
             for i in 0..32 {
                 let prev = state[(i + 31) % 32];
                 let next = state[(i + 1) % 32];
                 state[i] ^= prev.wrapping_add(next);
-                state[i] = state[i].wrapping_mul(0x1B);  // Special tsundere constant
+                state[i] = state[i].wrapping_mul(0x1B);
             }
         }
 

@@ -33,12 +33,10 @@ impl NekoHash for KawaiiHash {
                 value |= (byte as u64) << (i * 8);
             }
             
-            // Mix with kawaii magic numbers
             value = value.wrapping_mul(0x1234_5678_9ABC_DEF0);
             value ^= rng.gen::<u64>();
             value = value.rotate_right(17);
             
-            // Add to result
             result.extend_from_slice(&value.to_le_bytes()[..std::cmp::min(8, self.size - result.len())]);
             if result.len() >= self.size {
                 break;

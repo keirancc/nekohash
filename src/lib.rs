@@ -9,13 +9,8 @@ pub use magical::MagicalHash;
 
 /// The main trait that all Nekohash algorithms implement
 pub trait NekoHash {
-    /// Computes the hash of the input data
     fn hash(&self, data: &[u8]) -> Vec<u8>;
-    
-    /// Returns the size of the hash in bytes
     fn hash_size(&self) -> usize;
-    
-    /// Returns a friendly name for the hash algorithm
     fn algorithm_name(&self) -> &'static str;
 }
 

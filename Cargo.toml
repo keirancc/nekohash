@@ -2,12 +2,13 @@
 name = "nekohash"
 version = "0.1.0"
 edition = "2021"
-authors = ["Nekohash Contributors"]
-description = "An anime-themed hashing library for Rust"
+authors = ["keirancc"]
+description = "A multifaceted hashing library for Rust"
 license = "MIT"
-repository = "https://github.com/username/nekohash"
-keywords = ["hash", "anime", "cryptography", "kawaii"]
+repository = "https://github.com/keirancc/nekohash"
+keywords = ["hash", "anime", "cryptography"]
 categories = ["cryptography", "algorithms"]
+readme = "README.md"
 
 [dependencies]
 rand = "0.8"
