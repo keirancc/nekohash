@@ -1,34 +1,83 @@
+use std::error::Error;
+use std::fmt;
+
 pub mod kawaii;
-pub mod tsundere;
 pub mod magical;
+pub mod tsundere;
 pub mod utils;
 
-pub use kawaii::KawaiiHash;
-pub use tsundere::TsundereHash;
-pub use magical::MagicalHash;
+/// Custom error type for the Nekohash library
+#[derive(Debug)]
+pub enum NekoError {
+    /// Error during hash computation
+    HashError(String),
+    /// Error during encryption/decryption
+    CryptoError(String),
+    /// Error during key operations
+    KeyError(String),
+    /// Error during encoding/decoding
+    EncodingError(String),
+    /// Invalid input parameters
+    InvalidInput(String),
+    /// IO operation error
+    IoError(std::io::Error),
+}
 
-/// The main trait that all Nekohash algorithms implement
-pub trait NekoHash {
-    /// Computes the hash of the input data
-    fn hash(&self, data: &[u8]) -> Vec<u8>;
-    
-    /// Returns the size of the hash in bytes
-    fn hash_size(&self) -> usize;
-    
-    /// Returns a friendly name for the hash algorithm
-    fn algorithm_name(&self) -> &'static str;
-
-    /// Encrypts the hash with an optional key
-    /// If no key is provided, a random key will be generated and the hash will be unrecoverable
-    fn encrypt_hash(&self, hash: &[u8], key: Option<&[u8]>) -> Result<Vec<u8>, String> {
-        utils::encrypt_data(hash, key)
-    }
-
-    /// Attempts to decrypt an encrypted hash with the given key
-    fn decrypt_hash(&self, encrypted: &[u8], key: &[u8]) -> Result<Vec<u8>, String> {
-        utils::decrypt_data(encrypted, key)
+impl fmt::Display for NekoError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            NekoError::HashError(msg) => write!(f, "Hash error: {}", msg),
+            NekoError::CryptoError(msg) => write!(f, "Crypto error: {}", msg),
+            NekoError::KeyError(msg) => write!(f, "Key error: {}", msg),
+            NekoError::EncodingError(msg) => write!(f, "Encoding error: {}", msg),
+            NekoError::InvalidInput(msg) => write!(f, "Invalid input: {}", msg),
+            NekoError::IoError(e) => write!(f, "IO error: {}", e),
+        }
     }
 }
+
+impl Error for NekoError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            NekoError::IoError(e) => Some(e),
+            _ => None,
+        }
+    }
+}
+
+impl From<std::io::Error> for NekoError {
+    fn from(err: std::io::Error) -> Self {
+        NekoError::IoError(err)
+    }
+}
+
+/// Result type for Nekohash operations
+pub type NekoResult<T> = Result<T, NekoError>;
+
+/// Trait for hash implementations
+pub trait NekoHash {
+    /// Hash the input data
+    fn hash(&self, data: &[u8]) -> Vec<u8>;
+    
+    /// Hash the input data with encryption
+    fn hash_encrypted(&self, data: &[u8], key: Option<&[u8]>) -> NekoResult<Vec<u8>> {
+        let hash = self.hash(data);
+        utils::encrypt_data(&hash, key)
+            .map_err(|e| NekoError::CryptoError(e))
+    }
+    
+    /// Get the output size of the hash in bytes
+    fn output_size(&self) -> usize;
+    
+    /// Reset the hash state if applicable
+    fn reset(&mut self) {
+        // Default implementation does nothing
+    }
+}
+
+pub use kawaii::KawaiiHash;
+pub use magical::MagicalHash;
+pub use tsundere::TsundereHash;
 
 #[cfg(test)]
 mod tests {
@@ -48,14 +97,14 @@ mod tests {
         
         // Test with provided key
         let key = [42u8; 32];
-        let encrypted = hasher.encrypt_hash(&hash, Some(&key)).unwrap();
-        let decrypted = hasher.decrypt_hash(&encrypted, &key).unwrap();
+        let encrypted = hasher.hash_encrypted(data, Some(&key)).unwrap();
+        let decrypted = utils::decrypt_data(&encrypted, &key).unwrap();
         assert_eq!(hash, decrypted);
 
         // Test with random key (should fail with different key)
-        let encrypted_random = hasher.encrypt_hash(&hash, None).unwrap();
+        let encrypted_random = hasher.hash_encrypted(data, None).unwrap();
         let wrong_key = [7u8; 32];
-        let result = hasher.decrypt_hash(&encrypted_random, &wrong_key);
+        let result = utils::decrypt_data(&encrypted_random, &wrong_key);
         assert!(result.is_err() || result.unwrap() != hash);
     }
 }
