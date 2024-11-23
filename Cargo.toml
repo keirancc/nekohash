@@ -1,6 +1,6 @@
 [package]
 name = "nekohash"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 authors = ["keirancc"]
 description = "A multifaceted hashing library for Rust"

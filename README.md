@@ -16,7 +16,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nekohash = "0.1.1"
+nekohash = "0.1.3"
 ```
 
 or using `cargo`:
