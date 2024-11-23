@@ -19,6 +19,12 @@ Add to your `Cargo.toml`:
 nekohash = "0.1.1"
 ```
 
+or using `cargo`:
+
+```bash
+cargo add nekohash
+```
+
 ## Algorithm Details
 
 ### KawaiiHash
@@ -188,6 +194,57 @@ let combined = utils::combine_hashes(&[hash1, hash2, hash3]);
 ```
 
 The combination algorithm uses a rotating XOR operation to maintain a consistent output size while incorporating all input hashes.
+
+## Cryptographic Utilities
+
+The library includes several cryptographic utility functions for enhanced security and key management:
+
+### Key Management
+
+```rust
+// Generate a cryptographically secure key
+let key = generate_key();
+
+// Convert key to/from base64 for storage
+let key_str = key_to_base64(&key);
+let key_back = key_from_base64(&key_str).unwrap();
+
+// Derive a key from password and salt
+let salt = generate_salt();
+let derived_key = derive_key(b"my_password", &salt);
+
+// Generate time-based keys (useful for temporary tokens)
+let seed = b"application_seed";
+let temp_key = time_based_key(seed, 30); // 30-second window
+```
+
+### Secure Operations
+
+```rust
+// Constant-time comparison (timing-attack resistant)
+let hash1 = kawaii_hasher.hash(b"data1");
+let hash2 = kawaii_hasher.hash(b"data2");
+let are_equal = constant_time_compare(&hash1, &hash2);
+
+// Key stretching for password hashing
+let stretched = stretch_key(b"password", 10000, 32);
+
+// Combine multiple hashes securely
+let combined = combine_hashes(&[hash1, hash2, hash3]);
+
+// Rotate keys for added security
+let rotated_key = rotate_key(&key, 12); // rotate 12 bits
+```
+
+### Encryption Layer
+
+```rust
+// Encrypt with optional key
+let encrypted = encrypt_data(b"secret data", None).unwrap();
+
+// Decrypt with key
+let decrypted = decrypt_data(&encrypted, &key).unwrap();
+```
 
 ## Performance Considerations
 

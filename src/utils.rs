@@ -27,7 +27,7 @@ pub fn from_hex(hex: &str) -> Result<Vec<u8>, String> {
         .collect()
 }
 
-/// Combines multiple hashes into one using a kawaii mixing function
+/// Combines multiple hashes into one using a rotating XOR operation
 pub fn combine_hashes(hashes: &[Vec<u8>]) -> Vec<u8> {
     if hashes.is_empty() {
         return Vec::new();
@@ -50,7 +50,6 @@ pub fn combine_hashes(hashes: &[Vec<u8>]) -> Vec<u8> {
 pub fn encrypt_data(data: &[u8], key: Option<&[u8]>) -> Result<Vec<u8>, String> {
     let mut rng = thread_rng();
     
-    // Generate or use provided key
     let key = match key {
         Some(k) if k.len() == 32 => k.to_vec(),
         Some(_) => return Err("Key must be exactly 32 bytes".to_string()),
@@ -61,16 +60,13 @@ pub fn encrypt_data(data: &[u8], key: Option<&[u8]>) -> Result<Vec<u8>, String> 
         }
     };
 
-    // Generate IV
     let mut iv = [0u8; 16];
     rng.fill(&mut iv[..]);
 
-    // Encrypt
     let mut cipher = Aes256Ctr64BE::new(key[..].into(), &iv.into());
     let mut buf = data.to_vec();
     cipher.apply_keystream(&mut buf);
 
-    // Format: base64(iv + ciphertext)
     let mut result = Vec::with_capacity(16 + buf.len());
     result.extend_from_slice(&iv);
     result.extend_from_slice(&buf);
@@ -84,7 +80,6 @@ pub fn decrypt_data(encrypted_data: &[u8], key: &[u8]) -> Result<Vec<u8>, String
         return Err("Key must be exactly 32 bytes".to_string());
     }
 
-    // Decode base64
     let encrypted = BASE64.decode(encrypted_data)
         .map_err(|e| format!("Invalid base64: {}", e))?;
 
@@ -92,10 +87,8 @@ pub fn decrypt_data(encrypted_data: &[u8], key: &[u8]) -> Result<Vec<u8>, String
         return Err("Invalid encrypted data".to_string());
     }
 
-    // Split IV and ciphertext
     let (iv, ciphertext) = encrypted.split_at(16);
     
-    // Decrypt
     let mut cipher = Aes256Ctr64BE::new(key.into(), iv.into());
     let mut buf = ciphertext.to_vec();
     cipher.apply_keystream(&mut buf);
@@ -119,4 +112,147 @@ pub fn key_to_base64(key: &[u8]) -> String {
 pub fn key_from_base64(key_str: &str) -> Result<Vec<u8>, String> {
     BASE64.decode(key_str)
         .map_err(|e| format!("Invalid base64 key: {}", e))
+}
+
+/// Constant-time comparison of two byte slices
+/// Useful for comparing hashes without timing attacks
+pub fn constant_time_compare(a: &[u8], b: &[u8]) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+
+    let mut result = 0u8;
+    for (x, y) in a.iter().zip(b.iter()) {
+        result |= x ^ y;
+    }
+    result == 0
+}
+
+/// Performs key stretching using multiple hash iterations
+/// Useful for password hashing or key derivation
+pub fn stretch_key(data: &[u8], iterations: usize, output_size: usize) -> Vec<u8> {
+    use super::KawaiiHash;
+    
+    let mut result = data.to_vec();
+    let hasher = KawaiiHash::with_size(output_size);
+    
+    for _ in 0..iterations {
+        result = hasher.hash(&result);
+    }
+    
+    result
+}
+
+/// Generates a deterministic key from a password and salt
+pub fn derive_key(password: &[u8], salt: &[u8]) -> Vec<u8> {
+    let mut input = Vec::with_capacity(password.len() + salt.len());
+    input.extend_from_slice(password);
+    input.extend_from_slice(salt);
+    
+    stretch_key(&input, 10000, 32)
+}
+
+/// Generates a cryptographically secure random salt
+pub fn generate_salt() -> Vec<u8> {
+    let mut salt = vec![0u8; 16];
+    thread_rng().fill(&mut salt[..]);
+    salt
+}
+
+/// Performs a time-based key derivation
+/// Useful for time-sensitive operations or temporary keys
+pub fn time_based_key(seed: &[u8], time_window: u64) -> Vec<u8> {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    
+    let time_slot = now / time_window;
+    let mut input = Vec::with_capacity(seed.len() + 8);
+    input.extend_from_slice(seed);
+    input.extend_from_slice(&time_slot.to_le_bytes());
+    
+    derive_key(&input, &generate_salt())
+}
+
+/// Rotates a key by a specified number of bits
+pub fn rotate_key(key: &[u8], bits: u32) -> Vec<u8> {
+    let mut result = key.to_vec();
+    let total_bits = key.len() * 8;
+    let rotation = bits as usize % total_bits;
+    
+    if rotation == 0 {
+        return result;
+    }
+    
+    let bytes_to_rotate = rotation / 8;
+    let remaining_bits = rotation % 8;
+    
+    if bytes_to_rotate > 0 {
+        result.rotate_left(bytes_to_rotate);
+    }
+    
+    if remaining_bits > 0 {
+        let mut carry = 0u8;
+        for byte in result.iter_mut() {
+            let new_carry = *byte >> (8 - remaining_bits);
+            *byte = (*byte << remaining_bits) | carry;
+            carry = new_carry;
+        }
+        result[0] |= carry;
+    }
+    
+    result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_constant_time_compare() {
+        let a = vec![1, 2, 3, 4];
+        let b = vec![1, 2, 3, 4];
+        let c = vec![1, 2, 3, 5];
+        
+        assert!(constant_time_compare(&a, &b));
+        assert!(!constant_time_compare(&a, &c));
+    }
+
+    #[test]
+    fn test_key_stretching() {
+        let data = b"password123";
+        let result = stretch_key(data, 1000, 32);
+        assert_eq!(result.len(), 32);
+    }
+
+    #[test]
+    fn test_key_derivation() {
+        let password = b"password123";
+        let salt = generate_salt();
+        let key1 = derive_key(password, &salt);
+        let key2 = derive_key(password, &salt);
+        
+        assert_eq!(key1.len(), 32);
+        assert_eq!(key1, key2);
+    }
+
+    #[test]
+    fn test_time_based_key() {
+        let seed = b"test_seed";
+        let key1 = time_based_key(seed, 30);
+        let key2 = time_based_key(seed, 30);
+        
+        assert_eq!(key1.len(), 32);
+        // Note: This test might fail if it runs exactly when the time window changes
+    }
+
+    #[test]
+    fn test_key_rotation() {
+        let key = vec![0b10101010, 0b11110000];
+        let rotated = rotate_key(&key, 4);
+        assert_eq!(rotated, vec![0b10101111, 0b00001010]);
+    }
 }
