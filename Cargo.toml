@@ -1,0 +1,13 @@
+[package]
+name = "nekohash"
+version = "0.1.0"
+edition = "2021"
+authors = ["Nekohash Contributors"]
+description = "An anime-themed hashing library for Rust"
+license = "MIT"
+repository = "https://github.com/username/nekohash"
+keywords = ["hash", "anime", "cryptography", "kawaii"]
+categories = ["cryptography", "algorithms"]
+
+[dependencies]
+rand = "0.8"
