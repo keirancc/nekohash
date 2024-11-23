@@ -6,6 +6,12 @@ pub struct TsundereHash {
     rounds: usize,
 }
 
+impl Default for TsundereHash {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TsundereHash {
     pub fn new() -> Self {
         Self { rounds: 3 }

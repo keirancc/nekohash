@@ -4,6 +4,12 @@ pub struct MagicalHash {
     magic_constant: u64,
 }
 
+impl Default for MagicalHash {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MagicalHash {
     pub fn new() -> Self {
         Self {
