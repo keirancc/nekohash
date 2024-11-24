@@ -16,7 +16,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-nekohash = "0.1.3"
+nekohash = "0.2.0"
 ```
 
 or using `cargo`:
@@ -24,6 +24,43 @@ or using `cargo`:
 ```bash
 cargo add nekohash
 ```
+
+## Interactive Demo
+
+The library includes a comprehensive interactive demo that showcases all features. To run it:
+
+```bash
+cargo run --example demo
+```
+
+> ⚠️ Note: The demo requires an interactive terminal environment.
+
+The demo includes several sections:
+
+1. **Hash Algorithm Demo** 📝
+   - Demonstrates all three hash algorithms (KawaiiHash, MagicalHash, TsundereHash)
+   - Shows different output sizes and configurations
+   - Displays hash results in hex format with colored output
+
+2. **Encryption Demo** 🔐
+   - Showcases the AES-256-CTR encryption layer
+   - Demonstrates key generation and management
+   - Shows encryption and decryption of data
+
+3. **Key Derivation Demo** 🔑
+   - Shows various key derivation methods
+   - Demonstrates salt generation and usage
+   - Includes examples of key stretching and time-based keys
+
+4. **Utility Functions Demo** 🛠️
+   - Shows hash combination functionality
+   - Demonstrates constant-time comparison
+   - Showcases key rotation and other utilities
+
+5. **Interactive Hash Testing** 🎮
+   - Allows testing any hash algorithm with custom input
+   - Supports configuring algorithm-specific parameters
+   - Provides immediate visual feedback
 
 ## Algorithm Details
 
@@ -246,43 +283,6 @@ let encrypted = encrypt_data(b"secret data", None).unwrap();
 let decrypted = decrypt_data(&encrypted, &key).unwrap();
 ```
 
-## Interactive Demo
-
-The library includes a comprehensive interactive demo that showcases all features. To run it:
-
-```bash
-cargo run --example demo
-```
-
-> ⚠️ Note: The demo requires an interactive terminal environment.
-
-The demo includes several sections:
-
-1. **Hash Algorithm Demo** 📝
-   - Demonstrates all three hash algorithms (KawaiiHash, MagicalHash, TsundereHash)
-   - Shows different output sizes and configurations
-   - Displays hash results in hex format with colored output
-
-2. **Encryption Demo** 🔐
-   - Showcases the AES-256-CTR encryption layer
-   - Demonstrates key generation and management
-   - Shows encryption and decryption of data
-
-3. **Key Derivation Demo** 🔑
-   - Shows various key derivation methods
-   - Demonstrates salt generation and usage
-   - Includes examples of key stretching and time-based keys
-
-4. **Utility Functions Demo** 🛠️
-   - Shows hash combination functionality
-   - Demonstrates constant-time comparison
-   - Showcases key rotation and other utilities
-
-5. **Interactive Hash Testing** 🎮
-   - Allows testing any hash algorithm with custom input
-   - Supports configuring algorithm-specific parameters
-   - Provides immediate visual feedback
-
 ## Security Considerations
 
 - This library is primarily designed for educational and non-critical applications
@@ -297,19 +297,6 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Version History
-
-### 0.1.2
-- Added interactive demo with colored output
-- Improved hash algorithm determinism
-- Enhanced error handling and state management
-- Added comprehensive documentation
-
-### 0.1.1
-- Initial implementation of core hash algorithms
-- Added basic encryption layer
-- Implemented utility functions
 
 ## Acknowledgments
 
