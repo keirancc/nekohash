@@ -246,25 +246,72 @@ let encrypted = encrypt_data(b"secret data", None).unwrap();
 let decrypted = decrypt_data(&encrypted, &key).unwrap();
 ```
 
-## Performance Considerations
+## Interactive Demo
 
-- KawaiiHash: O(n) complexity, memory usage proportional to output size
-- TsundereHash: O(n + r) where r is rounds, constant memory usage
-- MagicalHash: O(n) complexity, constant memory usage
-- Encryption: Additional O(n) overhead for AES-256-CTR
+The library includes a comprehensive interactive demo that showcases all features. To run it:
 
-## Security Notes
+```bash
+cargo run --example demo
+```
 
-These hash functions are designed for general-purpose use and checksums. For cryptographic security, use established cryptographic hash functions. The encryption layer uses standard AES-256-CTR and is suitable for general security needs.
+> ⚠️ Note: The demo requires an interactive terminal environment.
+
+The demo includes several sections:
+
+1. **Hash Algorithm Demo** 📝
+   - Demonstrates all three hash algorithms (KawaiiHash, MagicalHash, TsundereHash)
+   - Shows different output sizes and configurations
+   - Displays hash results in hex format with colored output
+
+2. **Encryption Demo** 🔐
+   - Showcases the AES-256-CTR encryption layer
+   - Demonstrates key generation and management
+   - Shows encryption and decryption of data
+
+3. **Key Derivation Demo** 🔑
+   - Shows various key derivation methods
+   - Demonstrates salt generation and usage
+   - Includes examples of key stretching and time-based keys
+
+4. **Utility Functions Demo** 🛠️
+   - Shows hash combination functionality
+   - Demonstrates constant-time comparison
+   - Showcases key rotation and other utilities
+
+5. **Interactive Hash Testing** 🎮
+   - Allows testing any hash algorithm with custom input
+   - Supports configuring algorithm-specific parameters
+   - Provides immediate visual feedback
+
+## Security Considerations
+
+- This library is primarily designed for educational and non-critical applications
+- The hash functions are not cryptographically secure
+- The encryption layer uses standard AES-256-CTR but should not be relied upon for high-security applications
+- Key management features are provided for convenience but should be used with caution in production
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit pull requests or open issues for:
-- Algorithm improvements
-- Performance optimizations
-- Additional hash functions
-- Enhanced test coverage
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Version History
+
+### 0.1.2
+- Added interactive demo with colored output
+- Improved hash algorithm determinism
+- Enhanced error handling and state management
+- Added comprehensive documentation
+
+### 0.1.1
+- Initial implementation of core hash algorithms
+- Added basic encryption layer
+- Implemented utility functions
+
+## Acknowledgments
+
+- Inspired by various hashing algorithms and cryptographic concepts
+- Built with love for both security and anime 🐱✨
